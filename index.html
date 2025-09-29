@@ -237,7 +237,7 @@
                 document.body.removeChild(tempTextarea);
             };
 
-            const createColorSwatch = (color, isEditable = false) => {
+            const createColorSwatch = (color, isEditable = false, associatedStripe = null) => {
                 const swatch = document.createElement('div');
                 swatch.className = 'color-swatch relative flex flex-col items-center justify-end h-64 rounded-lg shadow-lg text-white p-4 overflow-hidden';
                 swatch.style.backgroundColor = color;
@@ -263,6 +263,10 @@
                         const newColor = colorPicker.value;
                         swatch.style.backgroundColor = newColor;
                         hexCodeElement.innerText = newColor;
+                        // NEU: Wenn ein verknüpfter Streifen existiert, aktualisiere auch dessen Farbe.
+                        if (associatedStripe) {
+                            associatedStripe.style.backgroundColor = newColor;
+                        }
                     });
                     
                     swatch.prepend(colorPicker);
@@ -362,13 +366,15 @@
 
                 // --- Populate both views ---
                 currentColors.forEach(color => {
-                    const swatch = createColorSwatch(color, true);
-                    paletteGrid.appendChild(swatch);
-                    
                     const stripe = document.createElement('div');
                     stripe.className = 'palette-stripe flex-grow h-full transition-all duration-150';
                     stripe.style.backgroundColor = color;
                     stripe.draggable = true;
+                    
+                    // NEU: Übergebe den Streifen an die Farbfeld-Funktion, um sie zu verknüpfen
+                    const swatch = createColorSwatch(color, true, stripe);
+                    
+                    paletteGrid.appendChild(swatch);
                     paletteStripeContainer.appendChild(stripe);
                 });
 
@@ -405,4 +411,5 @@
     </script>
 </body>
 </html>
+
 
