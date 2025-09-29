@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de" class=""> <!-- Die 'dark' Klasse wird hier von JS gesteuert -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farbpaletten-Generator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for a sleeker look and feel */
+        html {
+            /* Smooth color transition for theme toggle */
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Style for the color swatch */
+        .color-swatch {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .color-swatch:hover {
+            transform: translateY(-5px) scale(1.05);
+        }
+        
+        /* Custom styling for the number input for light and dark modes */
+        input[type="number"] {
+            -moz-appearance: textfield;
+            background-color: #e5e7eb; /* gray-200 */
+            border: 1px solid #d1d5db; /* gray-300 */
+            color: #111827; /* gray-900 */
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .dark input[type="number"] {
+            background-color: #374151; /* gray-700 */
+            border: 1px solid #4b5563; /* gray-600 */
+            color: #f3f4f6; /* gray-100 */
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* A little animation for the saved palettes appearing */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .saved-palette {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Styles for Drag & Drop */
+        .palette-stripe {
+            cursor: grab;
+        }
+        .palette-stripe:active {
+            cursor: grabbing;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+
+    </style>
+</head>
+<body class="p-4 sm:p-8 transition-colors duration-300">
+
+    <div class="max-w-7xl mx-auto space-y-12">
+
+        <!-- Header Section -->
+        <header class="relative text-center">
+            <!-- Theme Toggle Button -->
+            <div class="absolute top-0 right-0">
+                <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-900 focus:ring-purple-500">
+                    <svg id="theme-icon-light" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="theme-icon-dark" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-600">Zufälliger Farbpaletten-Generator</h1>
+            <p class="mt-2 text-lg text-gray-600 dark:text-gray-400">Finde neue Inspiration und erstelle wunderschöne Farbschemata.</p>
+        </header>
+
+        <!-- Controls Section -->
+        <div id="controls-container" class="flex flex-col sm:flex-row items-center justify-center gap-4 p-6 bg-white rounded-lg shadow-lg transition-colors duration-300">
+            <label for="color-count" class="font-medium text-gray-700 dark:text-gray-300">Anzahl der Farben:</label>
+            <input type="number" id="color-count" value="5" min="1" max="15" class="w-20 text-center rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <button id="generate-btn" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                Neue Palette generieren
+            </button>
+        </div>
+
+        <!-- Current Palette Section -->
+        <section>
+            <div id="current-palette-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <!-- Color swatches will be generated here by JavaScript -->
+            </div>
+            <div class="text-center mt-6">
+                 <button id="save-palette-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-3.125L5 18V4z" />
+                    </svg>
+                    Palette speichern
+                </button>
+            </div>
+        </section>
+        
+        <hr class="border-gray-200 dark:border-gray-700"/>
+
+        <!-- Saved Palettes Section -->
+        <section>
+            <h2 class="text-3xl font-bold text-center mb-8">Gespeicherte Paletten</h2>
+            <div id="saved-palettes-container" class="space-y-8">
+                 <!-- Saved palettes will be appended here -->
+                 <p id="no-saved-palettes-msg" class="text-center text-gray-500">Du hast noch keine Paletten gespeichert. Klicke oben auf "Palette speichern", um deine Favoriten zu behalten!</p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Theme Toggle Logic ---
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeIconLight = document.getElementById('theme-icon-light');
+            const themeIconDark = document.getElementById('theme-icon-dark');
+            const body = document.body;
+            const controlsContainer = document.getElementById('controls-container');
+
+            const themeCheck = () => {
+                const userTheme = localStorage.getItem('theme');
+                const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const savedPalettes = document.querySelectorAll('.saved-palette');
+
+                if (userTheme === 'dark' || (!userTheme && systemIsDark)) {
+                    document.documentElement.classList.add('dark');
+                    body.classList.remove('bg-gray-100', 'text-gray-900');
+                    body.classList.add('bg-gray-900', 'text-gray-100');
+                    controlsContainer.classList.remove('bg-white');
+                    controlsContainer.classList.add('bg-gray-800');
+                    savedPalettes.forEach(p => {
+                        p.classList.remove('bg-white');
+                        p.classList.add('bg-gray-800');
+                    });
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    body.classList.remove('bg-gray-900', 'text-gray-100');
+                    body.classList.add('bg-gray-100', 'text-gray-900');
+                    controlsContainer.classList.remove('bg-gray-800');
+                    controlsContainer.classList.add('bg-white');
+                    savedPalettes.forEach(p => {
+                        p.classList.remove('bg-gray-800');
+                        p.classList.add('bg-white');
+                    });
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                }
+            };
+            
+            themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                const savedPalettes = document.querySelectorAll('.saved-palette');
+                
+                if (isDark) {
+                    localStorage.setItem('theme', 'dark');
+                    body.classList.remove('bg-gray-100', 'text-gray-900');
+                    body.classList.add('bg-gray-900', 'text-gray-100');
+                    controlsContainer.classList.remove('bg-white');
+                    controlsContainer.classList.add('bg-gray-800');
+                    savedPalettes.forEach(p => {
+                        p.classList.remove('bg-white');
+                        p.classList.add('bg-gray-800');
+                    });
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    body.classList.remove('bg-gray-900', 'text-gray-100');
+                    body.classList.add('bg-gray-100', 'text-gray-900');
+                    controlsContainer.classList.remove('bg-gray-800');
+                    controlsContainer.classList.add('bg-white');
+                    savedPalettes.forEach(p => {
+                        p.classList.remove('bg-gray-800');
+                        p.classList.add('bg-white');
+                    });
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                }
+            });
+
+            // --- App Logic ---
+            const generateBtn = document.getElementById('generate-btn');
+            const colorCountInput = document.getElementById('color-count');
+            const currentPaletteContainer = document.getElementById('current-palette-container');
+            const savePaletteBtn = document.getElementById('save-palette-btn');
+            const savedPalettesContainer = document.getElementById('saved-palettes-container');
+            const noSavedPalettesMsg = document.getElementById('no-saved-palettes-msg');
+
+            let currentColors = [];
+
+            // --- Core Functions ---
+
+            const generateRandomHexColor = () => {
+                return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            };
+            
+            const copyToClipboard = (element) => {
+                const textToCopy = element.innerText;
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = textToCopy;
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    element.innerText = 'Kopiert!';
+                    setTimeout(() => element.innerText = textToCopy, 1500);
+                } catch (err) {
+                    console.error('Kopieren fehlgeschlagen:', err);
+                    element.innerText = 'Fehler!';
+                     setTimeout(() => element.innerText = textToCopy, 1500);
+                }
+                document.body.removeChild(tempTextarea);
+            };
+
+            const createColorSwatch = (color, isEditable = false) => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch relative flex flex-col items-center justify-end h-64 rounded-lg shadow-lg text-white p-4 overflow-hidden';
+                swatch.style.backgroundColor = color;
+
+                const hexCodeElement = document.createElement('span');
+                hexCodeElement.className = 'hex-code relative z-20 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm font-mono cursor-pointer';
+                hexCodeElement.innerText = color;
+                
+                hexCodeElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    copyToClipboard(hexCodeElement);
+                });
+
+                swatch.appendChild(hexCodeElement);
+
+                if (isEditable) {
+                    const colorPicker = document.createElement('input');
+                    colorPicker.type = 'color';
+                    colorPicker.value = color;
+                    colorPicker.className = 'absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10';
+                    
+                    colorPicker.addEventListener('input', () => {
+                        const newColor = colorPicker.value;
+                        swatch.style.backgroundColor = newColor;
+                        hexCodeElement.innerText = newColor;
+                    });
+                    
+                    swatch.prepend(colorPicker);
+                }
+                return swatch;
+            };
+
+            const generateNewPalette = () => {
+                const count = parseInt(colorCountInput.value, 10);
+                currentPaletteContainer.innerHTML = '';
+                currentColors = [];
+                for (let i = 0; i < count; i++) {
+                    const color = generateRandomHexColor();
+                    currentColors.push(color);
+                    const swatch = createColorSwatch(color, false);
+                    currentPaletteContainer.appendChild(swatch);
+                }
+            };
+            
+            // --- NEW: Drag and Drop Logic ---
+            const addDragAndDropHandlers = (container) => {
+                container.addEventListener('dragstart', e => {
+                    if (e.target.classList.contains('palette-stripe')) {
+                        e.target.classList.add('dragging');
+                    }
+                });
+
+                container.addEventListener('dragend', e => {
+                    if (e.target.classList.contains('palette-stripe')) {
+                        e.target.classList.remove('dragging');
+                    }
+                });
+
+                container.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    const draggingElement = container.querySelector('.dragging');
+                    if (!draggingElement) return;
+
+                    const afterElement = getDragAfterElement(container, e.clientX);
+                    if (afterElement == null) {
+                        container.appendChild(draggingElement);
+                    } else {
+                        container.insertBefore(draggingElement, afterElement);
+                    }
+                });
+            };
+
+            const getDragAfterElement = (container, x) => {
+                const draggableElements = [...container.querySelectorAll('.palette-stripe:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = x - box.left - box.width / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            };
+
+
+            const saveCurrentPalette = () => {
+                if (currentColors.length === 0) return;
+
+                if (noSavedPalettesMsg) noSavedPalettesMsg.style.display = 'none';
+
+                const paletteWrapper = document.createElement('div');
+                const isCurrentlyDark = document.documentElement.classList.contains('dark');
+                const bgClass = isCurrentlyDark ? 'bg-gray-800' : 'bg-white';
+                paletteWrapper.className = `saved-palette p-4 ${bgClass} rounded-lg shadow-lg transition-colors duration-300`;
+                
+                // --- NEW: Header for buttons ---
+                const paletteHeader = document.createElement('div');
+                paletteHeader.className = 'flex justify-end items-center gap-2 mb-4';
+
+                // --- NEW: View Toggle Button ---
+                const viewToggleButton = document.createElement('button');
+                viewToggleButton.className = 'p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700';
+                const gridIcon = `<svg id="grid-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 5h4v4H5V5zm6 0h4v4h-4V5zm-6 6h4v4H5v-4zm6 6h4v4h-4v-4z" /></svg>`;
+                const stripeIcon = `<svg id="stripe-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>`;
+                viewToggleButton.innerHTML = gridIcon + stripeIcon;
+                
+                // --- Existing Delete Button ---
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+                deleteButton.className = 'p-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-transform transform hover:scale-105 shadow-sm';
+                
+                paletteHeader.appendChild(viewToggleButton);
+                paletteHeader.appendChild(deleteButton);
+                
+                // --- The two view containers ---
+                const paletteGrid = document.createElement('div');
+                paletteGrid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4';
+
+                const paletteStripeContainer = document.createElement('div');
+                paletteStripeContainer.className = 'flex h-48 w-full rounded-lg overflow-hidden hidden';
+
+                // --- Populate both views ---
+                currentColors.forEach(color => {
+                    const swatch = createColorSwatch(color, true);
+                    paletteGrid.appendChild(swatch);
+                    
+                    const stripe = document.createElement('div');
+                    stripe.className = 'palette-stripe flex-grow h-full transition-all duration-150';
+                    stripe.style.backgroundColor = color;
+                    stripe.draggable = true;
+                    paletteStripeContainer.appendChild(stripe);
+                });
+
+                // --- Add listeners ---
+                addDragAndDropHandlers(paletteStripeContainer);
+                
+                viewToggleButton.addEventListener('click', () => {
+                    paletteGrid.classList.toggle('hidden');
+                    paletteStripeContainer.classList.toggle('hidden');
+                    viewToggleButton.querySelector('#grid-icon').classList.toggle('hidden');
+                    viewToggleButton.querySelector('#stripe-icon').classList.toggle('hidden');
+                });
+
+                deleteButton.addEventListener('click', () => {
+                    paletteWrapper.remove();
+                    if (savedPalettesContainer.children.length === 1) {
+                         noSavedPalettesMsg.style.display = 'block';
+                    }
+                });
+
+                // --- Assemble the final element ---
+                paletteWrapper.appendChild(paletteHeader);
+                paletteWrapper.appendChild(paletteGrid);
+                paletteWrapper.appendChild(paletteStripeContainer);
+                savedPalettesContainer.prepend(paletteWrapper);
+            };
+
+            // --- Initial Load ---
+            themeCheck();
+            generateNewPalette();
+            generateBtn.addEventListener('click', generateNewPalette);
+            savePaletteBtn.addEventListener('click', saveCurrentPalette);
+        });
+    </script>
+</body>
+</html>
+
